@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime & Donghua Local Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #2e51a2; --primary-dark: #1a4971; --bg-app: #f4f6f9; --bg-card: #ffffff; --text-main: #1a1a1a; --text-muted: #666; --accent: #d69e2e; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-app); color: var(--text-main); padding-bottom: 80px; overflow-x: hidden; }
+
+        /* Header */
+        header { background: var(--bg-card); padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        .header-container { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+        .app-title { font-size: 1.3em; font-weight: bold; color: var(--primary); text-align: center; }
+        .search-box { position: relative; width: 100%; }
+        .search-input { width: 100%; padding: 10px 15px 10px 35px; border: 1px solid #ddd; border-radius: 20px; font-size: 0.9em; outline: none; background: #f9fafb; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 0.9em; }
+
+        /* Feed */
+        .feed-container { max-width: 700px; margin: 15px auto; padding: 0 10px; display: flex; flex-direction: column; gap: 12px; }
+
+        /* Visual Card */
+        .anime-card { background: var(--bg-card); border-radius: 12px; overflow: hidden; display: flex; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #eaeaea; position: relative; height: 150px; }
+
+        .poster-side { width: 105px; height: 100%; background: #e2e8f0; position: relative; flex-shrink: 0; }
+        .anime-poster { width: 100%; height: 100%; object-fit: cover; }
+        .rating-tag { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.7em; font-weight: bold; padding: 2px 5px; border-radius: 4px; display: flex; align-items: center; gap: 3px; z-index: 2; }
+
+        .content-side { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+        
+        .text-content { display: flex; flex-direction: column; gap: 3px; }
+        .anime-title { font-size: 1em; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .anime-type { font-size: 0.75em; color: var(--primary); font-weight: 600; text-transform: uppercase; }
+        .anime-synopsis { font-size: 0.8em; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .card-actions { display: flex; gap: 6px; margin-top: 4px; }
+        .btn { flex: 1; padding: 6px; border-radius: 6px; font-size: 0.8em; font-weight: 600; text-align: center; cursor: pointer; border: none; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 4px; transition: 0.2s; }
+        .btn-save { background: #edf2f7; color: #4a5568; }
+        .btn-save.saved { background: var(--primary); color: #fff; }
+        .btn-watch { background: var(--primary); color: #fff; }
+        .btn-watch:hover { background: var(--primary-dark); }
+
+        /* Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #ffffff; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 100; border-top: 1px solid #eaeaea; }
+        .nav-item { font-size: 1.2em; color: #a0aec0; cursor: pointer; padding: 10px; }
+        .nav-item.active { color: var(--primary); }
+
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-container">
+        <div class="app-title" id="pageTitle">Anime & Donghua List</div>
+        <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari anime atau donghua..." onkeyup="handleSearch()">
+        </div>
+    </div>
+</header>
+
+<main class="feed-container" id="animeFeed">
+    </main>
+
+<nav class="bottom-nav">
+    <i class="fas fa-home nav-item active" title="Beranda" onclick="switchTab('home', this)"></i>
+    <i class="fas fa-bookmark nav-item" title="Disimpan" onclick="switchTab('saved', this)"></i>
+    <i class="fas fa-history nav-item" title="Riwayat" onclick="switchTab('history', this)"></i>
+</nav>
+
+<script>
+    // Data menggunakan path folder lokal: ./img/nama-file.jpg
+    const mediaData = [
+        // --- DONGHUA ---
+        { id: 1, title: "Battle Through the Heavens", type: "Donghua", rating: 8.9, synopsis: "Xiao Yan menguasai api surgawi demi mengembalikan kehormatan.", img: "/img/btth.jpg", link: "https://wetv.vip/id" },
+        { id: 2, title: "Renegade Immortal", type: "Donghua", rating: 8.8, synopsis: "Wang Lin menempuh jalur kultivasi yang kejam melawan takdir.", img: "./img/renegade.jpg", link: "https://wetv.vip/id" },
+        { id: 3, title: "A Record of a Mortal's Journey", type: "Donghua", rating: 9.0, synopsis: "Han Li bertahan hidup di dunia kultivasi dengan kecerdikan.", img: "./img/mortal.jpg", link: "https://bilibili.tv/id" },
+        { id: 4, title: "Beyond Times Gaze", type: "Donghua", rating: 8.2, synopsis: "Pemuda mewarisi tatapan melampaui waktu untuk menyelamatkan dunia.", img: "./img/beyond.jpg", link: "https://bilibili.tv/id" },
+        { id: 5, title: "Perfect World", type: "Donghua", rating: 8.6, synopsis: "Shi Hao berjuang dari bawah menggunakan kekuatan Tulang Tertinggi.", img: "./img/perfect.jpg", link: "https://wetv.vip/id" },
+        { id: 6, title: "Soul Land", type: "Donghua", rating: 8.7, synopsis: "Tang San membangkitkan roh bela diri Rumput Perak Biru.", img: "./img/soulland.jpg", link: "https://wetv.vip/id" },
+        { id: 7, title: "Swallowed Star", type: "Donghua", rating: 8.5, synopsis: "Luo Feng membela umat manusia dari monster mutasi.", img: "./img/swallowed.jpg", link: "https://wetv.vip/id" },
+        { id: 8, title: "Throne of Seal", type: "Donghua", rating: 8.3, synopsis: "Ksatria muda Long Hao Chen melindungi manusia dari iblis.", img: "./img/throne.jpg", link: "https://wetv.vip/id" },
+        { id: 9, title: "Martial Universe", type: "Donghua", rating: 8.1, synopsis: "Lin Dong menemukan jimat batu misterius.", img: "./img/martial.jpg", link: "https://wetv.vip/id" },
+        { id: 10, title: "A Will Eternal", type: "Donghua", rating: 8.4, synopsis: "Bai Xiaochun takut mati namun tanpa sengaja jadi legenda.", img: "./img/will.jpg", link: "https://wetv.vip/id" },
+        { id: 11, title: "Way of Choices", type: "Donghua", rating: 8.4, synopsis: "Chen Changsheng mengubah takdir hidupnya di ibu kota.", img: "./img/zetianji.jpg", link: "https://wetv.vip/id" },
+        { id: 12, title: "Against the Gods", type: "Donghua", rating: 8.1, synopsis: "Yun Che memegang cermin langit misterius.", img: "./img/atg.jpg", link: "https://wetv.vip/id" },
+
+        // --- ANIME ---
+        { id: 13, title: "One Piece", type: "Anime", rating: 9.1, synopsis: "Luffy menjelajahi Grand Line mencari harta karun.", img: "./img/onepiece.jpg", link: "https://bilibili.tv/id" },
+        { id: 14, title: "Solo Leveling", type: "Anime", rating: 8.8, synopsis: "Hunter terlemah mendapat sistem naik level.", img: "./img/solo.jpg", link: "https://bilibili.tv/id" },
+        { id: 15, title: "Frieren: Beyond Journey's End", type: "Anime", rating: 9.3, synopsis: "Elf mengenang perjalanan setelah raja iblis kalah.", img: "./img/frieren.jpg", link: "https://bilibili.tv/id" },
+        { id: 16, title: "Demon Slayer", type: "Anime", rating: 8.9, synopsis: "Tanjiro membasmi iblis demi adiknya.", img: "./img/kny.jpg", link: "https://bilibili.tv/id" },
+        { id: 17, title: "Jujutsu Kaisen", type: "Anime", rating: 8.8, synopsis: "Yuji terlibat dalam perang dunia gaib.", img: "./img/jjk.jpg", link: "https://bilibili.tv/id" },
+        { id: 18, title: "Attack on Titan", type: "Anime", rating: 9.1, synopsis: "Eren membasmi Titan dan mengungkap rahasia dunia.", img: "./img/aot.jpg", link: "https://bilibili.tv/id" },
+        { id: 19, title: "Mushoku Tensei", type: "Anime", rating: 8.7, synopsis: "Pria bereinkarnasi di dunia sihir.", img: "./img/mushoku.jpg", link: "https://bilibili.tv/id" },
+        { id: 20, title: "Naruto Shippuden", type: "Anime", rating: 8.6, synopsis: "Perjuangan Naruto membawa pulang Sasuke.", img: "./img/naruto.jpg", link: "https://bilibili.tv/id" },
+        { id: 21, title: "Hunter x Hunter", type: "Anime", rating: 9.0, synopsis: "Gon mencari ayahnya sang Hunter legendaris.", img: "./img/hxh.jpg", link: "https://bilibili.tv/id" },
+        { id: 22, title: "Bleach: TYBW", type: "Anime", rating: 9.0, synopsis: "Perang darah akhir Shinigami vs Quincy.", img: "./img/bleach.jpg", link: "https://bilibili.tv/id" },
+        { id: 23, title: "Chainsaw Man", type: "Anime", rating: 8.5, synopsis: "Denji menjadi pemburu iblis bersama Pochita.", img: "./img/chainsaw.jpg", link: "https://bilibili.tv/id" },
+        { id: 24, title: "Blue Lock", type: "Anime", rating: 8.4, synopsis: "Program radikal melahirkan striker egois terbaik.", img: "./img/bluelock.jpg", link: "https://bilibili.tv/id" },
+        { id: 25, title: "Spy x Family", type: "Anime", rating: 8.5, synopsis: "Mata-mata membangun keluarga palsu penuh rahasia.", img: "./img/spyfamily.jpg", link: "https://bilibili.tv/id" }
+    ];
+
+    let savedAnime = JSON.parse(localStorage.getItem('savedAnime')) || [];
+    let historyAnime = JSON.parse(localStorage.getItem('historyAnime')) || [];
+    let currentTab = 'home';
+
+    const animeFeed = document.getElementById('animeFeed');
+    const pageTitle = document.getElementById('pageTitle');
+
+    function renderFeed(data) {
+        animeFeed.innerHTML = '';
+
+        if (data.length === 0) {
+            animeFeed.innerHTML = `<div class="empty-state"><i class="fas fa-info-circle" style="font-size: 2em; margin-bottom: 10px; display:block;"></i>Tidak ada data ditemukan.</div>`;
+            return;
+        }
+
+        data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'anime-card';
+            const isSaved = savedAnime.includes(item.id);
+
+            card.innerHTML = `
+                <div class="poster-side">
+                    <div class="rating-tag"><i class="fas fa-star"></i>${item.rating.toFixed(1)}</div>
+                    <img src="${item.img}" alt="${item.title}" class="anime-poster" loading="lazy" onerror="this.onerror=null;this.src='https://via.placeholder.com/105x150/e2e8f0/64748b?text=No+Img';">
+                </div>
+                <div class="content-side">
+                    <div class="text-content">
+                        <div class="anime-title" title="${item.title}">${item.title}</div>
+                        <div class="anime-type">${item.type}</div>
+                        <p class="anime-synopsis">${item.synopsis}</p>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-save ${isSaved ? 'saved' : ''}" onclick="toggleSave(${item.id})">
+                            <i class="fas fa-bookmark"></i> ${isSaved ? 'Disimpan' : 'Simpan'}
+                        </button>
+                        <a href="${item.link}" target="_blank" class="btn btn-watch" onclick="addToHistory(${item.id})">
+                            <i class="fas fa-play"></i> Tonton
+                        </a>
+                    </div>
+                </div>
+            `;
+            animeFeed.appendChild(card);
+        });
+    }
+
+    function handleSearch() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        let sourceData = mediaData;
+
+        if (currentTab === 'saved') {
+            sourceData = mediaData.filter(item => savedAnime.includes(item.id));
+        } else if (currentTab === 'history') {
+            sourceData = historyAnime.map(id => mediaData.find(m => m.id === id)).filter(Boolean);
+        }
+
+        const filtered = sourceData.filter(item => item.title.toLowerCase().includes(keyword) || item.type.toLowerCase().includes(keyword));
+        renderFeed(filtered);
+    }
+
+    function switchTab(tabName, element) {
+        currentTab = tabName;
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        if (element) element.classList.add('active');
+        document.getElementById('searchInput').value = '';
+
+        if (tabName === 'home') {
+            pageTitle.innerText = "Anime & Donghua List";
+            renderFeed(mediaData);
+        } else if (tabName === 'saved') {
+            pageTitle.innerText = "Koleksi Disimpan";
+            renderFeed(mediaData.filter(item => savedAnime.includes(item.id)));
+        } else if (tabName === 'history') {
+            pageTitle.innerText = "Riwayat Tontonan";
+            const historyData = historyAnime.map(id => mediaData.find(m => m.id === id)).reverse();
+            renderFeed(historyData.filter(Boolean));
+        }
+    }
+
+    function addToHistory(id) {
+        if (!historyAnime.includes(id)) {
+            historyAnime.push(id);
+            if (historyAnime.length > 50) historyAnime.shift();
+            localStorage.setItem('historyAnime', JSON.stringify(historyAnime));
+        }
+    }
+
+    function toggleSave(id) {
+        if (savedAnime.includes(id)) {
+            savedAnime = savedAnime.filter(item => item !== id);
+        } else {
+            savedAnime.push(id);
+        }
+        localStorage.setItem('savedAnime', JSON.stringify(savedAnime));
+        
+        if (currentTab === 'saved') {
+            renderFeed(mediaData.filter(item => savedAnime.includes(item.id)));
+        } else {
+            handleSearch();
+        }
+    }
+
+    renderFeed(mediaData);
+</script>
+
+</body>
+</html>
